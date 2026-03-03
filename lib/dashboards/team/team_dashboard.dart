@@ -6,7 +6,7 @@ import '../../core/constants/app_colors.dart';
 import '../../models/task_model.dart';
 
 class TeamDashboard extends ConsumerStatefulWidget {
-  const TeamDashboard({Key? key}) : super(key: key);
+  const TeamDashboard({super.key});
 
   @override
   ConsumerState<TeamDashboard> createState() => _TeamDashboardState();
@@ -80,16 +80,21 @@ class _MyTasksTab extends ConsumerWidget {
             'My Tasks',
             style: Theme.of(
               context,
-            ).textTheme.displayMedium?.copyWith(fontSize: 32),
+            ).textTheme.headlineMedium?.copyWith(fontSize: 32),
           ),
           const SizedBox(height: 16),
           Expanded(
             child: tasksAsync.when(
               data: (tasks) {
                 // Team members only see their assigned tasks
-                final myTasks = tasks.toList();
-                if (myTasks.isEmpty)
+                final currentUserId = ref.read(currentUserProvider).value?.id;
+                final myTasks = tasks
+                    .where((t) => t.assignedTo == currentUserId)
+                    .toList();
+
+                if (myTasks.isEmpty) {
                   return const Center(child: Text('No assigned tasks.'));
+                }
 
                 return ListView.builder(
                   itemCount: myTasks.length,
@@ -152,9 +157,13 @@ class _TaskCardState extends State<_TaskCard> {
   @override
   Widget build(BuildContext context) {
     Color statusColor = AppColors.textSecondary;
-    if (widget.task.status == 'in_progress') statusColor = AppColors.warning;
-    if (widget.task.status == 'completed') statusColor = AppColors.success;
-    if (widget.task.status == 'accepted') statusColor = AppColors.primary;
+    if (widget.task.status == 'in_progress') {
+      statusColor = AppColors.warning;
+    } else if (widget.task.status == 'completed') {
+      statusColor = AppColors.success;
+    } else if (widget.task.status == 'accepted') {
+      statusColor = AppColors.primary;
+    }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -192,9 +201,10 @@ class _TaskCardState extends State<_TaskCard> {
                 widget.task.comments!.isNotEmpty) ...[
               const SizedBox(height: 8),
               Container(
+                width: double.infinity,
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.grey.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(

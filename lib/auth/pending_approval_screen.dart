@@ -4,7 +4,7 @@ import '../../providers/auth_provider.dart';
 import '../../core/constants/app_colors.dart';
 
 class PendingApprovalScreen extends ConsumerWidget {
-  const PendingApprovalScreen({Key? key}) : super(key: key);
+  const PendingApprovalScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

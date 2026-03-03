@@ -4,7 +4,7 @@ import '../../providers/auth_provider.dart';
 import '../../core/constants/app_colors.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
-  const SignupScreen({Key? key}) : super(key: key);
+  const SignupScreen({super.key});
 
   @override
   ConsumerState<SignupScreen> createState() => _SignupScreenState();
@@ -108,7 +108,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               ),
               const SizedBox(height: 24),
               DropdownButtonFormField<String>(
-                value: _selectedRole,
+                initialValue: _selectedRole,
                 decoration: InputDecoration(
                   labelText: 'Role',
                   border: OutlineInputBorder(

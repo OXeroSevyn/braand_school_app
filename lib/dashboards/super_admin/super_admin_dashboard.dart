@@ -6,7 +6,7 @@ import '../../core/constants/app_colors.dart';
 import '../../models/user_model.dart';
 
 class SuperAdminDashboard extends ConsumerStatefulWidget {
-  const SuperAdminDashboard({Key? key}) : super(key: key);
+  const SuperAdminDashboard({super.key});
 
   @override
   ConsumerState<SuperAdminDashboard> createState() =>
