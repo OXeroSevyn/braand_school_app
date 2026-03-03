@@ -28,3 +28,12 @@ final pendingUsersProvider = Provider<List<UserModel>>((ref) {
   final users = ref.watch(allUsersProvider).value ?? [];
   return users.where((u) => !u.approved && !u.isSuperAdmin).toList();
 });
+// Stream of activity logs (Realtime)
+final activityLogsProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
+  final client = ref.watch(supabaseClientProvider);
+  return client
+      .from('activity_logs')
+      .stream(primaryKey: ['id'])
+      .order('created_at', ascending: false)
+      .limit(10);
+});

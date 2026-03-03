@@ -15,12 +15,15 @@ class AdminDashboard extends ConsumerStatefulWidget {
 
 class _AdminDashboardState extends ConsumerState<AdminDashboard> {
   int _currentIndex = 0;
+  String? _selectedTaskId;
 
   @override
   Widget build(BuildContext context) {
     final screens = [
       _OverviewTab(
+        selectedTaskId: _selectedTaskId,
         onNavigate: (index) => setState(() => _currentIndex = index),
+        onTaskSelected: (taskId) => setState(() => _selectedTaskId = taskId),
       ),
       const _TeamTab(),
       const _TaskTab(),
@@ -220,14 +223,22 @@ class _PulsingDotState extends State<_PulsingDot>
 
 class _OverviewTab extends ConsumerWidget {
   final void Function(int) onNavigate;
+  final String? selectedTaskId;
+  final void Function(String?) onTaskSelected;
 
-  const _OverviewTab({required this.onNavigate, Key? key}) : super(key: key);
+  const _OverviewTab({
+    required this.onNavigate,
+    required this.onTaskSelected,
+    this.selectedTaskId,
+    Key? key,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider).value;
     final usersAsync = ref.watch(allUsersProvider);
     final tasksAsync = ref.watch(allTasksProvider);
+    final activityAsync = ref.watch(activityLogsProvider);
 
     // Calculate Team Metrics
     int totalTeam = 0;
@@ -359,7 +370,7 @@ class _OverviewTab extends ConsumerWidget {
           // 3. Live Activity Feed
           _buildSectionHeader(context, 'Live Activity Feed', 'View All'),
           const SizedBox(height: 16),
-          _buildActivityFeed(tasksAsync, usersAsync),
+          _buildActivityFeed(activityAsync, usersAsync),
           const SizedBox(height: 24),
 
           // 4. Quick Actions
@@ -398,7 +409,13 @@ class _OverviewTab extends ConsumerWidget {
           const SizedBox(height: 32),
 
           // 5. Task Progress
-          _buildSectionHeader(context, 'Task Progress', null, hasMore: true),
+          _buildSectionHeader(
+            context,
+            'Task Progress',
+            null,
+            hasMore: true,
+            onMorePressed: () => _showTaskSelectionMenu(context, ref),
+          ),
           const SizedBox(height: 16),
           _buildTaskProgressCard(tasksAsync),
 
@@ -480,6 +497,7 @@ class _OverviewTab extends ConsumerWidget {
     String title,
     String? actionText, {
     bool hasMore = false,
+    VoidCallback? onMorePressed,
   }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -503,73 +521,114 @@ class _OverviewTab extends ConsumerWidget {
           ),
         if (hasMore)
           IconButton(
-            onPressed: () {},
+            onPressed: onMorePressed ?? () {},
             icon: const Icon(Icons.more_horiz, color: AppColors.textSecondary),
           ),
       ],
     );
   }
 
+  void _showTaskSelectionMenu(BuildContext context, WidgetRef ref) {
+    final tasks = ref.read(allTasksProvider).value ?? [];
+    if (tasks.isEmpty) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Watch Task Progress',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            ...tasks.map(
+              (t) => ListTile(
+                title: Text(t.title),
+                trailing: t.id == selectedTaskId
+                    ? const Icon(Icons.check, color: AppColors.primary)
+                    : null,
+                onTap: () {
+                  onTaskSelected(t.id);
+                  Navigator.pop(ctx);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildActivityFeed(
-    AsyncValue<List<TaskModel>> tasksAsync,
+    AsyncValue<List<Map<String, dynamic>>> activityAsync,
     AsyncValue<List<UserModel>> usersAsync,
   ) {
-    if (tasksAsync.isLoading || usersAsync.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    return activityAsync.when(
+      data: (logs) {
+        if (logs.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16.0),
+            child: Text(
+              'No recent activity.',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          );
+        }
 
-    final tasks = tasksAsync.value ?? [];
-    final users = usersAsync.value ?? [];
+        final users = usersAsync.value ?? [];
 
-    if (tasks.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 16.0),
-        child: Text(
-          'No recent activity.',
-          style: TextStyle(color: AppColors.textSecondary),
-        ),
-      );
-    }
+        final feedItems = logs.take(3).map((log) {
+          final userId = log['user_id'] as String?;
+          final user = users.firstWhere(
+            (u) => u.id == userId,
+            orElse: () => UserModel(
+              id: '',
+              email: '',
+              role: '',
+              name: 'Unknown User',
+              approved: true,
+              createdAt: DateTime.now(),
+            ),
+          );
 
-    final recentTasks = List<TaskModel>.from(tasks)
-      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+          final action = log['action'] as String? ?? 'performed action';
+          final project = log['target_name'] as String? ?? '';
+          final createdAtStr = log['created_at'] as String?;
+          final createdAt = createdAtStr != null
+              ? DateTime.parse(createdAtStr)
+              : DateTime.now();
 
-    final feedItems = recentTasks.take(3).map((task) {
-      final user = users.firstWhere(
-        (u) => u.id == task.assignedTo || u.id == task.createdBy,
-        orElse: () => UserModel(
-          id: '',
-          email: '',
-          role: '',
-          name: 'Unknown User',
-          approved: true,
-          createdAt: DateTime.now(),
-        ),
-      );
+          final diff = DateTime.now().difference(createdAt);
+          String timeAgo = diff.inMinutes < 60
+              ? '${diff.inMinutes} mins ago'
+              : '${diff.inHours} hours ago';
+          if (diff.inDays > 0) timeAgo = '${diff.inDays} days ago';
+          if (diff.inMinutes == 0) timeAgo = 'Just now';
 
-      String action = 'updated task';
-      if (task.status == 'completed')
-        action = 'completed task';
-      else if (task.status == 'in_progress')
-        action = 'started working on';
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: _buildMockActivityItem(
+              name: user.name,
+              action: action,
+              department: project,
+              time: timeAgo,
+              color: AppColors.primaryBlue,
+            ),
+          );
+        }).toList();
 
-      final diff = DateTime.now().difference(task.updatedAt);
-      String timeAgo = diff.inMinutes < 60
-          ? '${diff.inMinutes} mins ago'
-          : '${diff.inHours} hours ago';
-      if (diff.inDays > 0) timeAgo = '${diff.inDays} days ago';
-      if (diff.inMinutes == 0) timeAgo = 'Just now';
-
-      return _buildMockActivityItem(
-        name: user.name,
-        action: action,
-        department: task.title,
-        time: timeAgo,
-        color: AppColors.primaryBlue,
-      );
-    }).toList();
-
-    return Column(children: feedItems);
+        return Column(children: feedItems);
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Error: $e')),
+    );
   }
 
   Widget _buildMockActivityItem({
@@ -686,7 +745,12 @@ class _OverviewTab extends ConsumerWidget {
           return const Center(child: Text('No active tasks to display.'));
         }
 
-        final task = tasks.first; // Pick the most recent/relevant task
+        final task = selectedTaskId != null
+            ? tasks.firstWhere(
+                (t) => t.id == selectedTaskId,
+                orElse: () => tasks.first,
+              )
+            : tasks.first;
         // We now have a real progress field
         final double progress = task.progress / 100.0;
 
