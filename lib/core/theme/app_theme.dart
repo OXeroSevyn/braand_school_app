@@ -1,27 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_colors.dart';
 
 class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
+      scaffoldBackgroundColor: AppColors.background,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
         primary: AppColors.primary,
+        error: AppColors.error,
         background: AppColors.background,
         surface: AppColors.card,
-        error: AppColors.error,
-        onPrimary: AppColors.textPrimary,
+        onPrimary: AppColors.card,
         onBackground: AppColors.textPrimary,
         onSurface: AppColors.textPrimary,
       ),
-      scaffoldBackgroundColor: AppColors.background,
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.background,
         elevation: 0,
         centerTitle: false,
-        iconTheme: IconThemeData(color: AppColors.textPrimary),
-        titleTextStyle: TextStyle(
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        titleTextStyle: GoogleFonts.plusJakartaSans(
           color: AppColors.textPrimary,
           fontSize: 24,
           fontWeight: FontWeight.bold,
@@ -29,33 +30,46 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         color: AppColors.card,
-        elevation: 2,
-        shadowColor: Colors.black.withOpacity(0.05),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(
+            color: Colors.grey.withOpacity(0.08),
+          ), // Subtle border for glass look
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.textPrimary,
+          foregroundColor: AppColors.card,
           elevation: 0,
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          textStyle: GoogleFonts.plusJakartaSans(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
         ),
       ),
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(
+      textTheme: GoogleFonts.plusJakartaSansTextTheme().copyWith(
+        displayLarge: GoogleFonts.plusJakartaSans(
           color: AppColors.textPrimary,
           fontWeight: FontWeight.bold,
+          letterSpacing: -0.5,
         ),
-        displayMedium: TextStyle(
+        displayMedium: GoogleFonts.plusJakartaSans(
           color: AppColors.textPrimary,
           fontWeight: FontWeight.bold,
+          letterSpacing: -0.5,
         ),
-        bodyLarge: TextStyle(color: AppColors.textPrimary),
-        bodyMedium: TextStyle(color: AppColors.textSecondary),
+        titleLarge: GoogleFonts.plusJakartaSans(
+          color: AppColors.textPrimary,
+          fontWeight: FontWeight.w600,
+        ),
+        bodyLarge: GoogleFonts.plusJakartaSans(color: AppColors.textPrimary),
+        bodyMedium: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary),
       ),
     );
   }

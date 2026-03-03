@@ -5,6 +5,7 @@ class TaskModel {
   final String? assignedTo;
   final String createdBy;
   final String status;
+  final int progress;
   final String? comments;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -16,6 +17,7 @@ class TaskModel {
     this.assignedTo,
     required this.createdBy,
     required this.status,
+    this.progress = 0,
     this.comments,
     required this.createdAt,
     required this.updatedAt,
@@ -29,6 +31,7 @@ class TaskModel {
       assignedTo: json['assigned_to'] as String?,
       createdBy: json['created_by'] as String,
       status: json['status'] as String? ?? 'pending',
+      progress: json['progress'] as int? ?? 0,
       comments: json['comments'] as String?,
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
@@ -43,6 +46,7 @@ class TaskModel {
       'assigned_to': assignedTo,
       'created_by': createdBy,
       'status': status,
+      'progress': progress,
       'comments': comments,
     };
   }
