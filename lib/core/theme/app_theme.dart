@@ -71,6 +71,11 @@ class AppTheme {
         ),
       ),
       textTheme: TextTheme(
+        displayLarge: GoogleFonts.plusJakartaSans(
+          color: AppColors.textPrimary,
+          fontSize: 36,
+          fontWeight: FontWeight.bold,
+        ),
         headlineLarge: GoogleFonts.plusJakartaSans(
           color: AppColors.textPrimary,
           fontSize: 32,
